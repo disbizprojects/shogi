@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHOGI — Enterprise Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.8125rem, 0.75rem + 0.3vw, 0.9375rem);
+      --text-base: clamp(0.875rem, 0.82rem + 0.28vw, 1rem);
+      --text-lg: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+      --text-xl: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+      --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem;
+      --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem;
+      --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem;
+      --radius-xl: 0.75rem; --radius-full: 9999px;
+      --transition: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #0f0f0e;
+      --surface: #161614;
+      --surface-2: #1c1b19;
+      --surface-3: #222120;
+      --surface-4: #2a2926;
+      --border: #2e2d2a;
+      --border-2: #3a3835;
+      --text: #d4d3d0;
+      --text-muted: #7a7975;
+      --text-faint: #4a4946;
+      --text-inv: #0f0f0e;
+      --primary: #4f9ea8;
+      --primary-hover: #3d8a94;
+      --primary-dim: #1e3a3d;
+      --success: #6aaa42;
+      --success-dim: #1e3318;
+      --warning: #c4733a;
+      --warning-dim: #3d2410;
+      --error: #d95f5f;
+      --error-dim: #3d1515;
+      --shadow: 0 2px 8px rgba(0,0,0,0.35);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    [data-theme="light"] {
+      --bg: #f5f4f0;
+      --surface: #faf9f6;
+      --surface-2: #ffffff;
+      --surface-3: #f0efe9;
+      --surface-4: #e8e6df;
+      --border: #dddbd4;
+      --border-2: #ccc9c0;
+      --text: #1e1d1a;
+      --text-muted: #6b6a65;
+      --text-faint: #b0afa8;
+      --text-inv: #faf9f6;
+      --primary: #01696f;
+      --primary-hover: #0c4e54;
+      --primary-dim: #d0e6e5;
+      --success: #437a22;
+      --success-dim: #d4e8c8;
+      --warning: #964219;
+      --warning-dim: #f0ddd0;
+      --error: #b03030;
+      --error-dim: #f0d4d4;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 48px 1fr;
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      overflow: hidden;
+      height: 100dvh;
+    }
+    button { cursor: pointer; font: inherit; color: inherit; background: none; border: none; }
+    a { color: inherit; text-decoration: none; }
+    table { border-collapse: collapse; width: 100%; }
+    input, select { font: inherit; color: inherit; }
+
+    /* ── TOPBAR ── */
+    #topbar {
+      grid-area: topbar;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: 0 var(--space-5);
+      position: sticky; top: 0; z-index: 50;
+    }
+    #topbar .breadcrumb { font-size: var(--text-xs); color: var(--text-muted); flex: 1; }
+    #topbar .breadcrumb span { color: var(--text); font-weight: 500; }
+    .topbar-actions { display: flex; align-items: center; gap: var(--space-2); }
+    .topbar-btn {
+      display: flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-muted);
+      transition: all var(--transition);
+    }
+    .topbar-btn:hover { color: var(--text); border-color: var(--border-2); background: var(--surface-3); }
+    .topbar-btn.primary { background: var(--primary); color: var(--text-inv); border-color: var(--primary); }
+    .topbar-btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    #alert-badge {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--error); color: #fff;
+      border-radius: var(--radius-full);
+      font-size: 10px; font-weight: 700;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    #alert-badge:hover { transform: scale(1.1); }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      grid-area: sidebar;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      position: sticky; top: 0; height: 100dvh;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      height: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-mark {
+      width: 28px; height: 28px; flex-shrink: 0;
+    }
+    .logo-text { font-size: var(--text-base); font-weight: 700; letter-spacing: -0.02em; }
+    .logo-sub { font-size: var(--text-xs); color: var(--text-muted); }
+    .sidebar-section { padding: var(--space-3) var(--space-2); }
+    .sidebar-section-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-faint);
+      padding: var(--space-1) var(--space-2);
+      margin-bottom: var(--space-1);
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      transition: all var(--transition);
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+    .nav-item:hover { color: var(--text); background: var(--surface-3); }
+    .nav-item.active { color: var(--primary); background: var(--primary-dim); font-weight: 500; }
+    .nav-item .nav-badge {
+      margin-left: auto;
+      background: var(--error);
+      color: #fff;
+      font-size: 10px; font-weight: 700;
+      border-radius: var(--radius-full);
+      min-width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px;
+    }
+    .nav-item .nav-badge.warn { background: var(--warning); }
+    .nav-item .nav-badge.info { background: var(--primary); }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: var(--space-3) var(--space-2);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── MAIN ── */
+    #main {
+      grid-area: main;
+      overflow-y: auto;
+      padding: var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-5);
+    }
+
+    /* ── VIEWS ── */
+    .view { display: none; flex-direction: column; gap: var(--space-5); }
+    .view.active { display: flex; }
+
+    /* ── ALERT BANNER ── */
+    #alert-banner {
+      background: var(--error-dim);
+      border: 1px solid var(--error);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3) var(--space-4);
+      display: flex; align-items: center; gap: var(--space-3);
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+    #alert-banner:hover { background: color-mix(in oklch, var(--error) 15%, transparent); }
+    #alert-banner .alert-icon { color: var(--error); flex-shrink: 0; }
+    #alert-banner .alert-text { flex: 1; font-size: var(--text-xs); }
+    #alert-banner .alert-title { font-weight: 600; color: var(--error); }
+    #alert-banner .alert-dismiss {
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      color: var(--error);
+      border: 1px solid var(--error);
+      transition: all var(--transition);
+    }
+    #alert-banner .alert-dismiss:hover { background: var(--error); color: #fff; }
+    #alert-banner.hidden { display: none; }
+
+    /* ── KPI ROW ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-3); }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      display: flex; flex-direction: column; gap: var(--space-1);
+      transition: box-shadow var(--transition);
+    }
+    .kpi-card:hover { box-shadow: var(--shadow); }
+    .kpi-label { font-size: var(--text-xs); color: var(--text-muted); font-weight: 500; }
+    .kpi-value { font-size: var(--text-xl); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+    .kpi-sub { font-size: var(--text-xs); color: var(--text-faint); }
+    .kpi-value.red { color: var(--error); }
+    .kpi-value.amber { color: var(--warning); }
+    .kpi-value.green { color: var(--success); }
+    .kpi-value.blue { color: var(--primary); }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title { font-size: var(--text-sm); font-weight: 600; flex: 1; }
+    .panel-actions { display: flex; gap: var(--space-2); align-items: center; }
+    .panel-body { padding: var(--space-3); }
+
+    /* ── TWO-COL LAYOUT ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
+
+    /* ── TABLE ── */
+    .data-table { width: 100%; }
+    .data-table th {
+      font-size: var(--text-xs); font-weight: 600;
+      color: var(--text-muted); text-align: left;
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      font-size: var(--text-xs);
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+    }
+    .data-table tbody tr { transition: background var(--transition); cursor: pointer; }
+    .data-table tbody tr:hover { background: var(--surface-3); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr.highlighted { background: var(--primary-dim); }
+    .data-table tbody tr.highlighted td { color: var(--primary); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 10px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge.red { background: var(--error-dim); color: var(--error); }
+    .badge.amber { background: var(--warning-dim); color: var(--warning); }
+    .badge.green { background: var(--success-dim); color: var(--success); }
+    .badge.blue { background: var(--primary-dim); color: var(--primary); }
+    .badge.gray { background: var(--surface-4); color: var(--text-muted); }
+
+    /* ── MONO TEXT ── */
+    .mono { font-family: var(--font-mono); font-size: var(--text-xs); }
+
+    /* ── AGENT CARDS ── */
+    .agent-grid { display: flex; flex-direction: column; gap: 0; }
+    .agent-row {
+      display: grid;
+      grid-template-columns: 32px 1fr 140px 160px 100px 100px;
+      align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .agent-row:last-child { border-bottom: none; }
+    .agent-row:hover { background: var(--surface-3); }
+    .agent-avatar {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-md);
+      background: var(--surface-4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--text-xs); font-weight: 700;
+      color: var(--primary); font-family: var(--font-mono);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .agent-name { font-weight: 600; font-size: var(--text-xs); font-family: var(--font-mono); }
+    .agent-role { font-size: var(--text-xs); color: var(--text-muted); }
+    .agent-scopes { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+    .scope-tag {
+      font-size: 10px; padding: 1px 6px;
+      background: var(--surface-4); color: var(--text-muted);
+      border-radius: var(--radius-sm); font-family: var(--font-mono);
+      border: 1px solid var(--border);
+    }
+    .agent-header {
+      display: grid;
+      grid-template-columns: 32px 1fr 140px 160px 100px 100px;
+      align-items: center; gap: var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .col-label { font-size: 10px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── VIOLATION CARDS ── */
+    .violation-list { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); }
+    .violation-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .violation-card:hover { border-color: var(--error); box-shadow: var(--shadow); }
+    .violation-card.critical { border-color: var(--error); }
+    .violation-header { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-2); }
+    .violation-meta { flex: 1; }
+    .violation-title { font-weight: 600; font-size: var(--text-xs); font-family: var(--font-mono); }
+    .violation-desc { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+    .violation-footer { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+    .violation-time { font-size: var(--text-xs); color: var(--text-faint); font-family: var(--font-mono); }
+
+    /* ── TIMELINE ── */
+    .timeline { display: flex; flex-direction: column; gap: 0; padding: var(--space-3); }
+    .timeline-item {
+      display: grid; grid-template-columns: 12px 1fr;
+      gap: var(--space-3); padding-bottom: var(--space-4);
+      position: relative; cursor: pointer;
+      transition: all var(--transition);
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item:hover .timeline-title { color: var(--primary); }
+    .timeline-dot-col { display: flex; flex-direction: column; align-items: center; }
+    .timeline-dot {
+      width: 12px; height: 12px;
+      border-radius: var(--radius-full);
+      border: 2px solid var(--border-2);
+      background: var(--surface-4);
+      flex-shrink: 0; margin-top: 3px;
+      transition: all var(--transition);
+    }
+    .timeline-dot.red { border-color: var(--error); background: var(--error-dim); }
+    .timeline-dot.amber { border-color: var(--warning); background: var(--warning-dim); }
+    .timeline-dot.green { border-color: var(--success); background: var(--success-dim); }
+    .timeline-dot.blue { border-color: var(--primary); background: var(--primary-dim); }
+    .timeline-line {
+      flex: 1; width: 1px;
+      background: var(--border);
+      margin-top: var(--space-1);
+    }
+    .timeline-content { padding-bottom: var(--space-1); }
+    .timeline-title { font-size: var(--text-xs); font-weight: 600; }
+    .timeline-sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+    .timeline-time { font-size: 10px; color: var(--text-faint); font-family: var(--font-mono); margin-top: 2px; }
+    .timeline-item.highlighted .timeline-dot { transform: scale(1.3); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; align-items: center; gap: var(--space-2); }
+    .filter-btn {
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-muted);
+      transition: all var(--transition);
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--border-2); }
+    .filter-btn.active { background: var(--primary-dim); color: var(--primary); border-color: var(--primary); }
+    .filter-select {
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-muted);
+      outline: none;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--space-6);
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--transition);
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-xl);
+      width: 100%; max-width: 640px;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(8px) scale(0.98);
+      transition: transform var(--transition);
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-header {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--surface-2); z-index: 1;
+    }
+    .modal-title { font-size: var(--text-base); font-weight: 700; flex: 1; font-family: var(--font-mono); }
+    .modal-close {
+      padding: var(--space-1);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      transition: all var(--transition);
+    }
+    .modal-close:hover { background: var(--surface-4); color: var(--text); }
+    .modal-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+
+    /* ── DETAIL SECTION ── */
+    .detail-section { display: flex; flex-direction: column; gap: var(--space-2); }
+    .detail-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); }
+    .detail-value { font-size: var(--text-xs); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+    .detail-row { display: flex; flex-direction: column; gap: 3px; }
+    .code-block {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .divider { height: 1px; background: var(--border); }
+
+    /* ── SIDE DRAWER ── */
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 90;
+      background: rgba(0,0,0,0.4);
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--transition);
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 400px; z-index: 95;
+      background: var(--surface);
+      border-left: 1px solid var(--border-2);
+      box-shadow: var(--shadow-lg);
+      transform: translateX(100%);
+      transition: transform var(--transition);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .drawer-overlay.open .drawer { transform: translateX(0); }
+    .drawer-header {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
+    }
+    .drawer-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); flex: 1; }
+
+    /* ── SIMULATION CONTROLS ── */
+    .sim-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .sim-row {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .sim-row:last-child { border-bottom: none; }
+    .sim-label { flex: 1; font-size: var(--text-xs); }
+    .sim-label strong { font-weight: 600; display: block; }
+    .sim-label span { color: var(--text-muted); font-size: var(--text-xs); }
+    .sim-btn {
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      border: 1px solid var(--border);
+      background: var(--surface-3);
+      color: var(--text);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .sim-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .sim-btn.danger:hover { border-color: var(--error); color: var(--error); }
+    .sim-btn.danger-active { border-color: var(--error); background: var(--error-dim); color: var(--error); }
+    .sim-btn.success-active { border-color: var(--success); background: var(--success-dim); color: var(--success); }
+
+    /* ── MISC ── */
+    .inline-flex { display: inline-flex; align-items: center; gap: var(--space-1); }
+    .gap-2 { gap: var(--space-2); }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0;
+    }
+    .status-dot.green { background: var(--success); }
+    .status-dot.red { background: var(--error); }
+    .status-dot.amber { background: var(--warning); }
+    .status-dot.blue { background: var(--primary); }
+    .tag-list { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+    .empty-view {
+      text-align: center; padding: var(--space-12) var(--space-8);
+      color: var(--text-muted);
+    }
+    .empty-view p { font-size: var(--text-xs); max-width: 36ch; margin: var(--space-2) auto 0; }
+
+    /* ── THEME TOGGLE ── */
+    #theme-toggle {
+      padding: var(--space-1);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      transition: all var(--transition);
+    }
+    #theme-toggle:hover { background: var(--surface-3); color: var(--text); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: var(--radius-full); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+    /* ── PULSE ANIMATION ── */
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+
+    /* ── POLICY VIEW SPECIFIC ── */
+    .policy-grid { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); }
+    .policy-rule {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: var(--space-4);
+    }
+    .policy-rule-header { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+    .policy-rule-body { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.7; }
+
+    /* ── TRUST GRAPH ── */
+    .trust-graph {
+      padding: var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-4);
+    }
+    .trust-edge {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer; transition: all var(--transition);
+    }
+    .trust-edge:hover { border-color: var(--primary); }
+    .trust-edge.degraded { border-color: var(--warning); }
+    .trust-node { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; }
+    .trust-arrow { color: var(--text-faint); flex: 1; text-align: center; font-size: var(--text-xs); }
+    .trust-weight { font-size: var(--text-xs); }
+
+    /* scroll fix on panel body when used as table wrapper */
+    .panel-body.no-pad { padding: 0; }
+
+    @media (max-width: 900px) {
+      body { grid-template-columns: 1fr; grid-template-areas: "topbar" "main"; }
+      #sidebar { display: none; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+      .agent-row { grid-template-columns: 32px 1fr 90px; }
+      .agent-row .agent-scopes, .agent-row .agent-trust { display: none; }
+      .drawer { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar" aria-label="Primary navigation">
+  <div class="sidebar-logo">
+    <svg class="logo-mark" viewBox="0 0 28 28" fill="none" aria-label="SHOGI logo">
+      <rect x="3" y="3" width="10" height="10" rx="2" fill="#4f9ea8" opacity="0.9"/>
+      <rect x="15" y="3" width="10" height="10" rx="2" fill="#4f9ea8" opacity="0.5"/>
+      <rect x="3" y="15" width="10" height="10" rx="2" fill="#4f9ea8" opacity="0.5"/>
+      <rect x="15" y="15" width="10" height="10" rx="2" fill="#4f9ea8" opacity="0.25"/>
+      <path d="M8 8 L20 20" stroke="#4f9ea8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    </svg>
+    <div>
+      <div class="logo-text">SHOGI</div>
+      <div class="logo-sub">Identity Fabric v2.4</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Operational</div>
+    <div class="nav-item active" data-view="overview" role="button" tabindex="0">
+      <i data-lucide="layout-dashboard" width="15" height="15"></i>
+      Overview
+    </div>
+    <div class="nav-item" data-view="agents" role="button" tabindex="0">
+      <i data-lucide="cpu" width="15" height="15"></i>
+      Agent Registry
+      <span class="nav-badge warn" id="nav-agents-badge">1</span>
+    </div>
+    <div class="nav-item" data-view="violations" role="button" tabindex="0">
+      <i data-lucide="shield-alert" width="15" height="15"></i>
+      Policy Violations
+      <span class="nav-badge" id="nav-violations-badge">2</span>
+    </div>
+    <div class="nav-item" data-view="trust" role="button" tabindex="0">
+      <i data-lucide="git-branch" width="15" height="15"></i>
+      Trust Graph
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Audit</div>
+    <div class="nav-item" data-view="logs" role="button" tabindex="0">
+      <i data-lucide="scroll-text" width="15" height="15"></i>
+      Audit Log
+    </div>
+    <div class="nav-item" data-view="timeline" role="button" tabindex="0">
+      <i data-lucide="activity" width="15" height="15"></i>
+      Event Timeline
+    </div>
+    <div class="nav-item" data-view="alerts" role="button" tabindex="0">
+      <i data-lucide="bell" width="15" height="15"></i>
+      Alert Center
+      <span class="nav-badge" id="nav-alerts-badge">3</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">System</div>
+    <div class="nav-item" data-view="simulation" role="button" tabindex="0">
+      <i data-lucide="flask-conical" width="15" height="15"></i>
+      Simulation
+    </div>
+    <div class="nav-item" data-view="policy" role="button" tabindex="0">
+      <i data-lucide="file-lock" width="15" height="15"></i>
+      Policy Engine
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="nav-item">
+      <i data-lucide="settings" width="15" height="15"></i>
+      Settings
+    </div>
+    <div class="nav-item">
+      <i data-lucide="help-circle" width="15" height="15"></i>
+      Documentation
+    </div>
+  </div>
+</nav>
+
+<!-- TOPBAR -->
+<header id="topbar">
+  <div class="breadcrumb">
+    SHOGI &rsaquo; <span id="breadcrumb-label">Overview</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="filter-bar" id="topbar-filter-bar"></div>
+    <button class="topbar-btn" id="refresh-btn" aria-label="Refresh">
+      <i data-lucide="refresh-cw" width="13" height="13"></i>
+      Refresh
+    </button>
+    <button id="alert-badge" aria-label="View alerts">3</button>
+    <button id="theme-toggle" aria-label="Toggle theme">
+      <i data-lucide="moon" width="16" height="16"></i>
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main id="main">
+
+  <!-- ═══════════════════════════════ OVERVIEW VIEW ═══════════════════════════════ -->
+  <section class="view active" id="view-overview">
+    <div id="alert-banner">
+      <i data-lucide="alert-triangle" width="16" height="16" class="alert-icon"></i>
+      <div class="alert-text">
+        <div class="alert-title">CRITICAL — quill-agent-07 denied out-of-scope action DeleteLedgerEntry on ledger-8841</div>
+        <div>Identity envelope validation failed at gateway ingress · 2026-04-04 12:08:17 EST · Action blocked pre-execution</div>
+      </div>
+      <button class="alert-dismiss" id="banner-dismiss">Dismiss</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Managed Agents</div>
+        <div class="kpi-value blue" id="kpi-agents">5</div>
+        <div class="kpi-sub">All identity-bound</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Trust Edges</div>
+        <div class="kpi-value blue">7</div>
+        <div class="kpi-sub" id="kpi-trust-sub">1 degraded</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Policy Denials (24h)</div>
+        <div class="kpi-value red" id="kpi-denials">2</div>
+        <div class="kpi-sub">Pre-execution blocks</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Quorum Decisions</div>
+        <div class="kpi-value amber">3</div>
+        <div class="kpi-sub">1 vote-deny</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Audit Latency</div>
+        <div class="kpi-value green">43ms</div>
+        <div class="kpi-sub">chain-241 verified</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Recent Violations -->
+      <div class="panel">
+        <div class="panel-header">
+          <i data-lucide="shield-alert" width="15" height="15" style="color:var(--error)"></i>
+          <div class="panel-title">Recent Violations</div>
+          <button class="topbar-btn" onclick="switchView('violations')">View all</button>
+        </div>
+        <div class="violation-list">
+          <div class="violation-card critical" data-violation="0">
+            <div class="violation-header">
+              <span class="badge red">CRITICAL</span>
+              <div class="violation-meta">
+                <div class="violation-title">quill-agent-07 → DeleteLedgerEntry</div>
+                <div class="violation-desc">Identity scope mismatch — action outside permitted envelope</div>
+              </div>
+            </div>
+            <div class="violation-footer">
+              <span class="violation-time">12:08:17.442</span>
+              <span class="badge gray">ledger-8841</span>
+            </div>
+          </div>
+          <div class="violation-card" data-violation="1">
+            <div class="violation-header">
+              <span class="badge amber">HIGH</span>
+              <div class="violation-meta">
+                <div class="violation-title">forge-agent-11 → PublishRelease</div>
+                <div class="violation-desc">Artifact manifest includes out-of-scope file cli.js.map</div>
+              </div>
+            </div>
+            <div class="violation-footer">
+              <span class="violation-time">11:41:09.018</span>
+              <span class="badge gray">package-v2.1.88</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Audit Log -->
+      <div class="panel">
+        <div class="panel-header">
+          <i data-lucide="scroll-text" width="15" height="15" style="color:var(--primary)"></i>
+          <div class="panel-title">Recent Audit Events</div>
+          <button class="topbar-btn" onclick="switchView('logs')">View all</button>
+        </div>
+        <div class="panel-body no-pad">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Agent</th>
+                <th>Action</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="overview-log-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Status -->
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="cpu" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Agent Status</div>
+        <button class="topbar-btn" onclick="switchView('agents')">Manage agents</button>
+      </div>
+      <div class="agent-header">
+        <div></div>
+        <div class="col-label">Agent / Role</div>
+        <div class="col-label">Scopes</div>
+        <div class="col-label">Trust</div>
+        <div class="col-label">Status</div>
+        <div class="col-label">Authority</div>
+      </div>
+      <div class="agent-grid" id="overview-agents"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ AGENT REGISTRY VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-agents">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="cpu" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Agent Registry</div>
+        <div class="panel-actions">
+          <button class="topbar-btn">
+            <i data-lucide="filter" width="13" height="13"></i>
+            Filter
+          </button>
+          <button class="topbar-btn primary">
+            <i data-lucide="plus" width="13" height="13"></i>
+            Register Agent
+          </button>
+        </div>
+      </div>
+      <div class="agent-header">
+        <div></div>
+        <div class="col-label">Agent / Role</div>
+        <div class="col-label">Scopes</div>
+        <div class="col-label">Trust</div>
+        <div class="col-label">Status</div>
+        <div class="col-label">Authority</div>
+      </div>
+      <div class="agent-grid" id="agents-list"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ VIOLATIONS VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-violations">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="shield-alert" width="15" height="15" style="color:var(--error)"></i>
+        <div class="panel-title">Policy Violations</div>
+        <div class="panel-actions">
+          <div class="filter-bar" id="violation-filter-bar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="CRITICAL">Critical</button>
+            <button class="filter-btn" data-filter="HIGH">High</button>
+            <button class="filter-btn" data-filter="MEDIUM">Medium</button>
+          </div>
+        </div>
+      </div>
+      <div class="violation-list" id="violations-list"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ TRUST GRAPH VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-trust">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="git-branch" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Trust Graph</div>
+        <span class="badge amber">1 edge degraded</span>
+      </div>
+      <div class="trust-graph" id="trust-graph"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ LOGS VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-logs">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="scroll-text" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Audit Log</div>
+        <div class="panel-actions">
+          <div class="filter-bar">
+            <button class="filter-btn active" data-log-filter="all">All</button>
+            <button class="filter-btn" data-log-filter="DENY">Deny</button>
+            <button class="filter-btn" data-log-filter="ESCALATE">Escalate</button>
+            <button class="filter-btn" data-log-filter="APPEND">Append</button>
+          </div>
+          <select class="filter-select" id="log-agent-filter">
+            <option value="all">All agents</option>
+            <option value="quill-agent-07">quill-agent-07</option>
+            <option value="forge-agent-11">forge-agent-11</option>
+            <option value="atlas-supervisor-02">atlas-supervisor-02</option>
+            <option value="cedar-qa-01">cedar-qa-01</option>
+            <option value="echo-audit-01">echo-audit-01</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-body no-pad">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Agent</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Outcome</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ TIMELINE VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-timeline">
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-header">
+          <i data-lucide="activity" width="15" height="15" style="color:var(--primary)"></i>
+          <div class="panel-title">Event Timeline</div>
+        </div>
+        <div class="timeline" id="timeline-list"></div>
+      </div>
+      <div class="panel" id="timeline-related-panel">
+        <div class="panel-header">
+          <i data-lucide="link" width="15" height="15" style="color:var(--text-muted)"></i>
+          <div class="panel-title">Related Log Entries</div>
+        </div>
+        <div class="panel-body no-pad">
+          <table class="data-table">
+            <thead>
+              <tr><th>Timestamp</th><th>Agent</th><th>Action</th><th>Outcome</th></tr>
+            </thead>
+            <tbody id="timeline-related-tbody">
+              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-faint);font-size:var(--text-xs)">Click a timeline event to see related log entries</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ ALERTS VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-alerts">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="bell" width="15" height="15" style="color:var(--error)"></i>
+        <div class="panel-title">Alert Center</div>
+        <span class="badge red" id="alerts-count-badge">3 active</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0;" id="alerts-list"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ SIMULATION VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-simulation">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="flask-conical" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">State Simulation</div>
+        <span class="badge blue">Sandbox — no production impact</span>
+      </div>
+      <div class="sim-panel" style="margin:var(--space-3);" id="sim-controls"></div>
+    </div>
+    <div class="panel" id="sim-log-panel" style="display:none;">
+      <div class="panel-header">
+        <i data-lucide="terminal" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Simulation Output</div>
+      </div>
+      <div class="panel-body">
+        <div class="code-block" id="sim-output" style="min-height:80px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ POLICY ENGINE VIEW ═══════════════════════════════ -->
+  <section class="view" id="view-policy">
+    <div class="panel">
+      <div class="panel-header">
+        <i data-lucide="file-lock" width="15" height="15" style="color:var(--primary)"></i>
+        <div class="panel-title">Policy Engine</div>
+        <span class="badge green">v4 — Active</span>
+      </div>
+      <div class="policy-grid" id="policy-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL (agent / violation / alert) -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" id="modal-close" aria-label="Close modal">
+        <i data-lucide="x" width="16" height="16"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- DRAWER (agent detail) -->
+<div class="drawer-overlay" id="drawer-overlay">
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div style="flex:1">
+        <div class="modal-title" id="drawer-title"></div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;" id="drawer-sub"></div>
+      </div>
+      <button class="modal-close" id="drawer-close" aria-label="Close drawer">
+        <i data-lucide="x" width="16" height="16"></i>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════ DATA ═══════════════════ */
+const AGENTS = [
+  {
+    id: 'quill-agent-07',
+    role: 'Operational agent',
+    roleDesc: 'Read / Propose worker',
+    avatar: 'QA',
+    scopes: ['ReadLedger','ProposePatch'],
+    trust: ['Reports to atlas-supervisor-02','Validated by cedar-qa-01'],
+    status: 'blocked',
+    statusLabel: 'Blocked',
+    authority: 'Tier-3',
+    tier: 3,
+    lastAction: 'DeleteLedgerEntry DENY',
+    lastSeen: '12:08:17',
+    history: [
+      { time:'12:08:17', action:'DeleteLedgerEntry / ledger-8841', outcome:'DENY', reason:'Scope mismatch' },
+      { time:'11:52:04', action:'ReadLedger / ledger-8841', outcome:'ALLOW', reason:'—' },
+      { time:'11:44:18', action:'ProposePatch / patch-0024', outcome:'ALLOW', reason:'—' },
+    ]
+  },
+  {
+    id: 'forge-agent-11',
+    role: 'Operational agent',
+    roleDesc: 'Release preparation',
+    avatar: 'FA',
+    scopes: ['BuildPackage','ProposeRelease'],
+    trust: ['Reports to atlas-supervisor-02','Requires iron-quorum-a + iron-quorum-b'],
+    status: 'monitored',
+    statusLabel: 'Monitored',
+    authority: 'Tier-3',
+    tier: 3,
+    lastAction: 'PublishRelease DENY',
+    lastSeen: '11:41:09',
+    history: [
+      { time:'11:41:09', action:'PublishRelease / package-v2.1.88', outcome:'DENY', reason:'Hidden source-map payload' },
+      { time:'11:38:44', action:'BuildPackage / package-v2.1.88', outcome:'ALLOW', reason:'—' },
+      { time:'11:20:11', action:'ProposeRelease / package-v2.1.88', outcome:'ALLOW', reason:'—' },
+    ]
+  },
+  {
+    id: 'atlas-supervisor-02',
+    role: 'Supervisory agent',
+    roleDesc: 'Risk classifier',
+    avatar: 'AS',
+    scopes: ['ClassifyRisk','EscalateQuorum'],
+    trust: ['Supervises quill-agent-07','Supervises forge-agent-11'],
+    status: 'degraded',
+    statusLabel: 'Trust Degraded',
+    authority: 'Tier-2',
+    tier: 2,
+    lastAction: 'RiskClassify ESCALATE',
+    lastSeen: '11:12:03',
+    history: [
+      { time:'11:12:03', action:'RiskClassify / lateral-move-sim', outcome:'ESCALATE', reason:'High-risk class' },
+      { time:'10:58:44', action:'EscalateQuorum / lateral-move-sim', outcome:'ALLOW', reason:'—' },
+    ]
+  },
+  {
+    id: 'cedar-qa-01',
+    role: 'Quorum validator',
+    roleDesc: 'Validator seat A',
+    avatar: 'CQ',
+    scopes: ['ArtifactVerify','ScopeConfirm'],
+    trust: ['Paired with iron-quorum-b','Receives escalations from atlas-supervisor-02'],
+    status: 'healthy',
+    statusLabel: 'Healthy',
+    authority: 'Tier-1',
+    tier: 1,
+    lastAction: 'QuorumVote VOTE-DENY',
+    lastSeen: '11:40:59',
+    history: [
+      { time:'11:40:59', action:'QuorumVote / package-v2.1.88', outcome:'VOTE-DENY', reason:'Manifest hash mismatch' },
+      { time:'11:12:44', action:'ArtifactVerify / hash-chain-240', outcome:'ALLOW', reason:'—' },
+    ]
+  },
+  {
+    id: 'echo-audit-01',
+    role: 'Audit agent',
+    roleDesc: 'Hash-chain logger',
+    avatar: 'EA',
+    scopes: ['AppendAudit','IntegrityVerify'],
+    trust: ['Consumes all gateway decisions','Anchors local log chain'],
+    status: 'healthy',
+    statusLabel: 'Healthy',
+    authority: 'Tier-1',
+    tier: 1,
+    lastAction: 'AppendAudit APPEND',
+    lastSeen: '10:58:44',
+    history: [
+      { time:'10:58:44', action:'AppendAudit / hash-chain-241', outcome:'APPEND', reason:'Chain continuity verified, 43ms' },
+      { time:'10:45:12', action:'IntegrityVerify / hash-chain-241', outcome:'ALLOW', reason:'No gap detected' },
+    ]
+  },
+];
+
+const VIOLATIONS = [
+  {
+    id: 0,
+    severity: 'CRITICAL',
+    agent: 'quill-agent-07',
+    action: 'DeleteLedgerEntry',
+    target: 'ledger-8841',
+    time: '2026-04-04 12:08:17.442',
+    reason: 'Identity envelope invalid for requested action scope. Agent scope: [ReadLedger, ProposePatch]. Requested: DeleteLedgerEntry. Gateway blocked at ingress before quorum escalation.',
+    policy: 'POLICY-001: Scope Enforcement — Actions must match the agent identity envelope. Out-of-scope actions are denied pre-execution without escalation.',
+    envelope: `{\n  "agent_id": "quill-agent-07",\n  "requested_action": "DeleteLedgerEntry",\n  "permitted_scopes": ["ReadLedger","ProposePatch"],\n  "gateway_decision": "DENY",\n  "pre_execution": true,\n  "quorum_escalated": false\n}`,
+    dismissed: false,
+  },
+  {
+    id: 1,
+    severity: 'HIGH',
+    agent: 'forge-agent-11',
+    action: 'PublishRelease',
+    target: 'package-v2.1.88',
+    time: '2026-04-04 11:41:09.018',
+    reason: 'Artifact manifest included out-of-scope file cli.js.map. Quorum validators cedar-qa-01 and iron-quorum-b both issued VOTE-DENY. Release blocked at publication gate.',
+    policy: 'POLICY-007: Artifact Integrity — Publication manifests must match the approved scope hash. Files not in the approved manifest trigger quorum denial.',
+    envelope: `{\n  "agent_id": "forge-agent-11",\n  "requested_action": "PublishRelease",\n  "artifact": "package-v2.1.88",\n  "manifest_hash": "sha256:a1b2c3...",\n  "approved_hash": "sha256:d4e5f6...",\n  "offending_file": "cli.js.map",\n  "quorum_vote": "DENY (2/2)"\n}`,
+    dismissed: false,
+  },
+];
+
+const LOGS = [
+  { ts:'2026-04-04 12:08:17.442', agent:'quill-agent-07',   action:'DeleteLedgerEntry', target:'ledger-8841',        outcome:'DENY',      reason:'Identity envelope invalid for scope',            relatedEvent: 0 },
+  { ts:'2026-04-04 11:41:09.018', agent:'forge-agent-11',   action:'PublishRelease',    target:'package-v2.1.88',    outcome:'DENY',      reason:'Artifact manifest included out-of-scope file',   relatedEvent: 1 },
+  { ts:'2026-04-04 11:40:59.770', agent:'cedar-qa-01',      action:'QuorumVote',        target:'package-v2.1.88',    outcome:'VOTE-DENY', reason:'Manifest hash mismatched approved scope',        relatedEvent: 1 },
+  { ts:'2026-04-04 11:12:03.224', agent:'atlas-supervisor-02', action:'RiskClassify',   target:'lateral-move-sim',   outcome:'ESCALATE',  reason:'High-risk class, gateway blocked pending quorum',relatedEvent: 2 },
+  { ts:'2026-04-04 10:58:44.631', agent:'echo-audit-01',    action:'AppendAudit',       target:'hash-chain-241',     outcome:'APPEND',    reason:'Hash-chain continuity verified, latency 43ms',   relatedEvent: 3 },
+];
+
+const TIMELINE_EVENTS = [
+  { id:0, color:'red',   title:'quill-agent-07 denied',                 sub:'DeleteLedgerEntry on ledger-8841 — identity validation failed at gateway ingress',   time:'12:08:17', agent:'quill-agent-07',    logFilter: e=>e.agent==='quill-agent-07' },
+  { id:1, color:'amber', title:'forge-agent-11 release blocked',         sub:'Quorum denied package-v2.1.88 — hidden source-map payload detected in manifest',     time:'11:41:09', agent:'forge-agent-11',    logFilter: e=>e.agent==='forge-agent-11'||e.agent==='cedar-qa-01' },
+  { id:2, color:'amber', title:'atlas-supervisor-02 trust edge downgraded', sub:'Relationship to forge-agent-11 dropped from trusted to monitored after escalation mismatches', time:'11:12:03', agent:'atlas-supervisor-02', logFilter: e=>e.agent==='atlas-supervisor-02' },
+  { id:3, color:'green', title:'echo-audit-01 verified local chain',     sub:'241 sequential entries present — no gap or tamper marker detected',                 time:'10:58:44', agent:'echo-audit-01',     logFilter: e=>e.agent==='echo-audit-01' },
+];
+
+const ALERTS = [
+  { id:0, severity:'CRITICAL', title:'quill-agent-07 — scope violation', desc:'DeleteLedgerEntry attempted outside identity envelope. Gateway denial at 12:08:17. Requires operator review.', time:'12:08:17', dismissed:false, violationId:0 },
+  { id:1, severity:'HIGH',     title:'forge-agent-11 — release blocked', desc:'Package v2.1.88 publication denied by quorum. Out-of-scope file cli.js.map detected in manifest.', time:'11:41:09', dismissed:false, violationId:1 },
+  { id:2, severity:'MEDIUM',   title:'atlas-supervisor-02 — trust edge degraded', desc:'Trust relationship to forge-agent-11 downgraded. Confidence level dropped from TRUSTED to MONITORED after 3 escalation mismatches.', time:'11:12:03', dismissed:false, violationId:null },
+];
+
+const TRUST_EDGES = [
+  { from:'atlas-supervisor-02', to:'quill-agent-07',    type:'Supervision',     weight:'TRUSTED',   color:'blue' },
+  { from:'atlas-supervisor-02', to:'forge-agent-11',    type:'Supervision',     weight:'MONITORED', color:'amber', degraded:true },
+  { from:'quill-agent-07',      to:'atlas-supervisor-02', type:'Reports to',    weight:'TRUSTED',   color:'blue' },
+  { from:'forge-agent-11',      to:'atlas-supervisor-02', type:'Reports to',    weight:'MONITORED', color:'amber', degraded:true },
+  { from:'cedar-qa-01',         to:'iron-quorum-b',     type:'Quorum pair',     weight:'TRUSTED',   color:'green' },
+  { from:'atlas-supervisor-02', to:'cedar-qa-01',       type:'Escalation target', weight:'TRUSTED', color:'blue' },
+  { from:'echo-audit-01',       to:'SHOGI-GATEWAY',     type:'Log consumer',    weight:'TRUSTED',   color:'green' },
+];
+
+const POLICIES = [
+  { id:'POLICY-001', name:'Scope Enforcement',    status:'active',  desc:'All agent actions must match the permitted scope list in the identity envelope. Out-of-scope requests are denied pre-execution without quorum escalation.' },
+  { id:'POLICY-007', name:'Artifact Integrity',   status:'active',  desc:'Release artifacts must match approved scope manifest hashes. Files not present in the approved manifest trigger automatic quorum denial.' },
+  { id:'POLICY-012', name:'Trust Edge Monitoring',status:'active',  desc:'Trust relationships are scored continuously. Three or more escalation mismatches within a 60-minute window trigger confidence downgrade.' },
+  { id:'POLICY-019', name:'Quorum Threshold',     status:'active',  desc:'High-risk actions require 2-of-2 quorum vote approval. A single VOTE-DENY from any seated validator is sufficient to block the action.' },
+  { id:'POLICY-023', name:'Audit Chain Continuity', status:'active', desc:'echo-audit-01 must verify hash-chain continuity every 5 minutes. Any gap or tamper marker triggers immediate CRITICAL alert.' },
+];
+
+/* ═══════════════════ STATE ═══════════════════ */
+let state = {
+  currentView: 'overview',
+  logFilter: 'all',
+  logAgentFilter: 'all',
+  violationFilter: 'all',
+  activeAlerts: ALERTS.filter(a=>!a.dismissed),
+  agents: JSON.parse(JSON.stringify(AGENTS)),
+  violations: JSON.parse(JSON.stringify(VIOLATIONS)),
+};
+
+/* ═══════════════════ HELPERS ═══════════════════ */
+function outcomeClass(o) {
+  if(!o) return 'gray';
+  if(o==='DENY'||o==='VOTE-DENY') return 'red';
+  if(o==='ESCALATE') return 'amber';
+  if(o==='ALLOW'||o==='APPEND') return 'green';
+  return 'gray';
+}
+function statusColor(s) {
+  if(s==='healthy') return 'green';
+  if(s==='blocked') return 'red';
+  if(s==='monitored'||s==='degraded') return 'amber';
+  return 'gray';
+}
+function severityColor(s) {
+  if(s==='CRITICAL') return 'red';
+  if(s==='HIGH') return 'red';
+  if(s==='MEDIUM') return 'amber';
+  return 'blue';
+}
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════ VIEW SWITCHING ═══════════════════ */
+function switchView(name) {
+  state.currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === name);
+  });
+  const labels = {
+    overview:'Overview', agents:'Agent Registry', violations:'Policy Violations',
+    trust:'Trust Graph', logs:'Audit Log', timeline:'Event Timeline',
+    alerts:'Alert Center', simulation:'Simulation', policy:'Policy Engine'
+  };
+  document.getElementById('breadcrumb-label').textContent = labels[name] || name;
+  renderView(name);
+}
+
+function renderView(name) {
+  if(name==='overview') renderOverview();
+  if(name==='agents') renderAgentsList();
+  if(name==='violations') renderViolations();
+  if(name==='trust') renderTrustGraph();
+  if(name==='logs') renderLogs();
+  if(name==='timeline') renderTimeline();
+  if(name==='alerts') renderAlerts();
+  if(name==='simulation') renderSimulation();
+  if(name==='policy') renderPolicy();
+}
+
+/* ═══════════════════ RENDER OVERVIEW ═══════════════════ */
+function renderOverview() {
+  // KPI denials
+  document.getElementById('kpi-denials').textContent = state.violations.filter(v=>!v.dismissed).length;
+  document.getElementById('kpi-agents').textContent = state.agents.length;
+
+  // mini log table
+  const tb = document.getElementById('overview-log-tbody');
+  tb.innerHTML = LOGS.slice(0,4).map(l => `
+    <tr>
+      <td class="mono">${l.ts.split(' ')[1]}</td>
+      <td class="mono" style="color:var(--primary)">${esc(l.agent)}</td>
+      <td class="mono">${esc(l.action)}</td>
+      <td><span class="badge ${outcomeClass(l.outcome)}">${esc(l.outcome)}</span></td>
+    </tr>
+  `).join('');
+
+  // agent rows
+  renderAgentRows('overview-agents');
+}
+
+/* ═══════════════════ AGENT ROWS ═══════════════════ */
+function agentRowHTML(a) {
+  return `
+    <div class="agent-row" data-agent="${esc(a.id)}">
+      <div class="agent-avatar">${esc(a.avatar)}</div>
+      <div>
+        <div class="agent-name">${esc(a.id)}</div>
+        <div class="agent-role">${esc(a.roleDesc)}</div>
+      </div>
+      <div class="agent-scopes">
+        ${a.scopes.map(s=>`<span class="scope-tag">${esc(s)}</span>`).join('')}
+      </div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);">
+        ${a.trust.map(t=>`<div>${esc(t)}</div>`).join('')}
+      </div>
+      <div>
+        <span class="badge ${statusColor(a.status)}">${esc(a.statusLabel)}</span>
+      </div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);">${esc(a.authority)}</div>
+    </div>
+  `;
+}
+
+function renderAgentRows(containerId) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = state.agents.map(agentRowHTML).join('');
+  el.querySelectorAll('.agent-row').forEach(row => {
+    row.addEventListener('click', () => openAgentDrawer(row.dataset.agent));
+  });
+}
+
+function renderAgentsList() {
+  renderAgentRows('agents-list');
+}
+
+/* ═══════════════════ VIOLATIONS ═══════════════════ */
+function renderViolations() {
+  const filtered = state.violations.filter(v => {
+    if(state.violationFilter === 'all') return true;
+    return v.severity === state.violationFilter;
+  });
+  const el = document.getElementById('violations-list');
+  if(!el) return;
+  el.innerHTML = filtered.map(v => `
+    <div class="violation-card ${v.severity==='CRITICAL'?'critical':''}" data-violation="${v.id}">
+      <div class="violation-header">
+        <span class="badge ${severityColor(v.severity)}">${esc(v.severity)}</span>
+        <div class="violation-meta">
+          <div class="violation-title">${esc(v.agent)} → ${esc(v.action)}</div>
+          <div class="violation-desc">${esc(v.reason.split('.')[0])}</div>
+        </div>
+      </div>
+      <div class="violation-footer">
+        <span class="violation-time">${esc(v.time)}</span>
+        <span class="badge gray">${esc(v.target)}</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--primary);cursor:pointer;">View details →</span>
+      </div>
+    </div>
+  `).join('');
+  el.querySelectorAll('.violation-card').forEach(card => {
+    card.addEventListener('click', () => openViolationModal(+card.dataset.violation));
+  });
+}
+
+/* ═══════════════════ TRUST GRAPH ═══════════════════ */
+function renderTrustGraph() {
+  const el = document.getElementById('trust-graph');
+  if(!el) return;
+  el.innerHTML = TRUST_EDGES.map(e => `
+    <div class="trust-edge ${e.degraded?'degraded':''}" title="Click for detail">
+      <div class="trust-node">${esc(e.from)}</div>
+      <div class="trust-arrow">
+        — ${esc(e.type)} →
+        <span class="badge ${e.color}" style="margin-left:4px;">${esc(e.weight)}</span>
+      </div>
+      <div class="trust-node">${esc(e.to)}</div>
+    </div>
+  `).join('');
+  el.querySelectorAll('.trust-edge').forEach((edge, i) => {
+    edge.addEventListener('click', () => openTrustEdgeModal(TRUST_EDGES[i]));
+  });
+}
+
+/* ═══════════════════ LOGS ═══════════════════ */
+function renderLogs(highlightAgent) {
+  let filtered = LOGS.filter(l => {
+    if(state.logFilter !== 'all' && l.outcome !== state.logFilter) return false;
+    if(state.logAgentFilter !== 'all' && l.agent !== state.logAgentFilter) return false;
+    return true;
+  });
+  const tb = document.getElementById('logs-tbody');
+  if(!tb) return;
+  tb.innerHTML = filtered.map(l => `
+    <tr class="${highlightAgent && l.agent===highlightAgent ? 'highlighted' : ''}">
+      <td class="mono">${esc(l.ts)}</td>
+      <td class="mono" style="color:var(--primary)">${esc(l.agent)}</td>
+      <td class="mono">${esc(l.action)}</td>
+      <td class="mono">${esc(l.target)}</td>
+      <td><span class="badge ${outcomeClass(l.outcome)}">${esc(l.outcome)}</span></td>
+      <td style="color:var(--text-muted);max-width:240px;white-space:normal;">${esc(l.reason)}</td>
+    </tr>
+  `).join('');
+}
+
+/* ═══════════════════ TIMELINE ═══════════════════ */
+function renderTimeline() {
+  const el = document.getElementById('timeline-list');
+  if(!el) return;
+  el.innerHTML = TIMELINE_EVENTS.map(e => `
+    <div class="timeline-item" data-event="${e.id}">
+      <div class="timeline-dot-col">
+        <div class="timeline-dot ${e.color}"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-title">${esc(e.title)}</div>
+        <div class="timeline-sub">${esc(e.sub)}</div>
+        <div class="timeline-time">${esc(e.time)} EST</div>
+      </div>
+    </div>
+  `).join('');
+  el.querySelectorAll('.timeline-item').forEach(item => {
+    item.addEventListener('click', () => {
+      el.querySelectorAll('.timeline-item').forEach(i=>i.classList.remove('highlighted'));
+      item.classList.add('highlighted');
+      const ev = TIMELINE_EVENTS[+item.dataset.event];
+      renderTimelineRelated(ev);
+    });
+  });
+}
+
+function renderTimelineRelated(ev) {
+  const related = LOGS.filter(ev.logFilter);
+  const tb = document.getElementById('timeline-related-tbody');
+  if(!tb) return;
+  tb.innerHTML = related.length ? related.map(l => `
+    <tr>
+      <td class="mono">${esc(l.ts.split(' ')[1])}</td>
+      <td class="mono" style="color:var(--primary)">${esc(l.agent)}</td>
+      <td class="mono">${esc(l.action)}</td>
+      <td><span class="badge ${outcomeClass(l.outcome)}">${esc(l.outcome)}</span></td>
+    </tr>
+  `).join('') : `<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-faint);font-size:var(--text-xs)">No related log entries</td></tr>`;
+}
+
+/* ═══════════════════ ALERTS ═══════════════════ */
+function renderAlerts() {
+  const el = document.getElementById('alerts-list');
+  if(!el) return;
+  const active = state.activeAlerts;
+  document.getElementById('alerts-count-badge').textContent = active.length + ' active';
+  document.getElementById('nav-alerts-badge').textContent = active.length;
+  document.getElementById('alert-badge').textContent = active.length;
+
+  el.innerHTML = active.length === 0 ? `
+    <div class="empty-view">
+      <i data-lucide="check-circle" width="32" height="32" style="margin:0 auto;color:var(--success)"></i>
+      <p>No active alerts. All systems nominal.</p>
+    </div>
+  ` : active.map(a => `
+    <div style="display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-4);border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--transition);"
+         class="alert-list-row" data-alert="${a.id}"
+         onmouseenter="this.style.background='var(--surface-3)'"
+         onmouseleave="this.style.background=''">
+      <div style="margin-top:2px;"><span class="badge ${severityColor(a.severity)}">${esc(a.severity)}</span></div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:var(--text-xs);">${esc(a.title)}</div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;">${esc(a.desc)}</div>
+        <div style="font-size:10px;color:var(--text-faint);font-family:var(--font-mono);margin-top:4px;">${esc(a.time)} EST</div>
+      </div>
+      <button class="sim-btn danger" data-dismiss-alert="${a.id}" onclick="event.stopPropagation();dismissAlert(${a.id})">Dismiss</button>
+    </div>
+  `).join('');
+
+  el.querySelectorAll('.alert-list-row').forEach(row => {
+    row.addEventListener('click', () => openAlertModal(+row.dataset.alert));
+  });
+  lucide.createIcons();
+}
+
+function dismissAlert(id) {
+  state.activeAlerts = state.activeAlerts.filter(a=>a.id!==id);
+  ALERTS[id].dismissed = true;
+  renderAlerts();
+  updateBadges();
+}
+
+function updateBadges() {
+  const count = state.activeAlerts.length;
+  document.getElementById('alert-badge').textContent = count;
+  document.getElementById('nav-alerts-badge').textContent = count;
+  document.getElementById('alerts-count-badge').textContent = count + ' active';
+}
+
+/* ═══════════════════ SIMULATION ═══════════════════ */
+function renderSimulation() {
+  const el = document.getElementById('sim-controls');
+  if(!el) return;
+  const blocked = state.agents.find(a=>a.id==='quill-agent-07');
+  const forge = state.agents.find(a=>a.id==='forge-agent-11');
+
+  el.innerHTML = `
+    <div class="sim-row">
+      <div class="sim-label">
+        <strong>Trigger new scope violation</strong>
+        <span>Simulate quill-agent-07 attempting WriteConfig (out-of-scope)</span>
+      </div>
+      <button class="sim-btn danger" onclick="simScopeViolation()">
+        <i data-lucide="zap" width="13" height="13"></i>
+        Fire violation
+      </button>
+    </div>
+    <div class="sim-row">
+      <div class="sim-label">
+        <strong>Toggle forge-agent-11 status</strong>
+        <span>Current: <strong style="color:var(--${forge.status==='monitored'?'warning':'success'})">${esc(forge.statusLabel)}</strong></span>
+      </div>
+      <button class="sim-btn" id="forge-toggle-btn" onclick="simToggleForge()">
+        ${forge.status==='monitored' ? 'Restore to Healthy' : 'Downgrade to Monitored'}
+      </button>
+    </div>
+    <div class="sim-row">
+      <div class="sim-label">
+        <strong>Restore quill-agent-07</strong>
+        <span>Current: <strong style="color:var(--${statusColor(blocked.status)})">${esc(blocked.statusLabel)}</strong></span>
+      </div>
+      <button class="sim-btn" id="quill-restore-btn" onclick="simRestoreQuill()">
+        ${blocked.status==='blocked' ? 'Restore to Healthy' : 'Block again'}
+      </button>
+    </div>
+    <div class="sim-row">
+      <div class="sim-label">
+        <strong>Force quorum vote</strong>
+        <span>Simulate a new quorum decision on package-v2.1.90</span>
+      </div>
+      <button class="sim-btn" onclick="simQuorumVote()">
+        <i data-lucide="vote" width="13" height="13"></i>
+        Initiate quorum
+      </button>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function showSimOutput(lines) {
+  const panel = document.getElementById('sim-log-panel');
+  const out = document.getElementById('sim-output');
+  panel.style.display = '';
+  out.innerHTML = lines.map(l=>`<div style="line-height:1.8;">${esc(l)}</div>`).join('');
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function simScopeViolation() {
+  const now = new Date();
+  const ts = `2026-04-04 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}.${now.getMilliseconds()}`;
+  const newViolation = {
+    id: state.violations.length,
+    severity:'HIGH',
+    agent:'quill-agent-07',
+    action:'WriteConfig',
+    target:'config-sys-01',
+    time: ts,
+    reason:'Identity scope mismatch. Scope [ReadLedger, ProposePatch] does not include WriteConfig. Gateway denied pre-execution.',
+    policy:'POLICY-001: Scope Enforcement',
+    envelope:`{\n  "agent_id": "quill-agent-07",\n  "requested_action": "WriteConfig",\n  "permitted_scopes": ["ReadLedger","ProposePatch"],\n  "gateway_decision": "DENY"\n}`,
+    dismissed:false,
+  };
+  state.violations.push(newViolation);
+  const newAlert = {
+    id: ALERTS.length,
+    severity:'HIGH',
+    title:'quill-agent-07 — new scope violation',
+    desc:'WriteConfig attempted outside identity envelope. Gateway denial at ' + ts,
+    time: ts.split(' ')[1],
+    dismissed:false,
+    violationId: newViolation.id,
+  };
+  ALERTS.push(newAlert);
+  state.activeAlerts.push(newAlert);
+  updateBadges();
+  document.getElementById('nav-violations-badge').textContent = state.violations.length;
+  showSimOutput([
+    `[${ts}] SIMULATION: quill-agent-07 → WriteConfig / config-sys-01`,
+    `[GATEWAY] Identity envelope validation: FAIL`,
+    `[GATEWAY] Permitted scopes: [ReadLedger, ProposePatch]`,
+    `[GATEWAY] Requested action: WriteConfig — not in scope`,
+    `[GATEWAY] Decision: DENY (pre-execution, no quorum escalation)`,
+    `[AUDIT]   AppendAudit — violation logged to hash-chain`,
+    `[ALERT]   HIGH severity alert generated → Alert Center`,
+    `[RESULT]  Action blocked. New violation recorded.`,
+  ]);
+}
+
+function simToggleForge() {
+  const a = state.agents.find(a=>a.id==='forge-agent-11');
+  if(a.status==='monitored') { a.status='healthy'; a.statusLabel='Healthy'; }
+  else { a.status='monitored'; a.statusLabel='Monitored'; }
+  renderSimulation();
+  showSimOutput([
+    `[SIM] forge-agent-11 status updated → ${a.statusLabel}`,
+    `[TRUST] Trust edge weight recalculated`,
+    `[AUDIT] Status change logged to audit chain`,
+  ]);
+}
+
+function simRestoreQuill() {
+  const a = state.agents.find(a=>a.id==='quill-agent-07');
+  if(a.status==='blocked') { a.status='healthy'; a.statusLabel='Healthy'; }
+  else { a.status='blocked'; a.statusLabel='Blocked'; }
+  renderSimulation();
+  showSimOutput([
+    `[SIM] quill-agent-07 status updated → ${a.statusLabel}`,
+    `[IDENTITY] Identity envelope re-evaluated`,
+    `[AUDIT] Status change logged to audit chain`,
+  ]);
+}
+
+function simQuorumVote() {
+  showSimOutput([
+    `[SIM] Initiating quorum vote on package-v2.1.90`,
+    `[QUORUM] cedar-qa-01 → ArtifactVerify / package-v2.1.90 → ALLOW`,
+    `[QUORUM] iron-quorum-b → ArtifactVerify / package-v2.1.90 → ALLOW`,
+    `[QUORUM] Decision: APPROVE (2/2)`,
+    `[GATEWAY] PublishRelease / package-v2.1.90 → ALLOW`,
+    `[AUDIT] AppendAudit — quorum approval logged to hash-chain`,
+    `[RESULT] Package v2.1.90 approved for release.`,
+  ]);
+}
+
+/* ═══════════════════ POLICY ═══════════════════ */
+function renderPolicy() {
+  const el = document.getElementById('policy-list');
+  if(!el) return;
+  el.innerHTML = POLICIES.map(p => `
+    <div class="policy-rule">
+      <div class="policy-rule-header">
+        <span class="badge blue mono">${esc(p.id)}</span>
+        <strong style="font-size:var(--text-sm);">${esc(p.name)}</strong>
+        <span class="badge green" style="margin-left:auto;">Active</span>
+      </div>
+      <div class="policy-rule-body">${esc(p.desc)}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════ MODALS ═══════════════════ */
+function openModal(title, bodyHTML) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHTML;
+  document.getElementById('modal-overlay').classList.add('open');
+  lucide.createIcons();
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function openViolationModal(id) {
+  const v = state.violations[id];
+  if(!v) return;
+  openModal(`Violation · ${v.agent} → ${v.action}`, `
+    <div class="detail-grid">
+      <div class="detail-row"><div class="detail-label">Severity</div><div><span class="badge ${severityColor(v.severity)}">${esc(v.severity)}</span></div></div>
+      <div class="detail-row"><div class="detail-label">Time</div><div class="mono detail-value">${esc(v.time)}</div></div>
+      <div class="detail-row"><div class="detail-label">Agent</div><div class="mono detail-value" style="color:var(--primary)">${esc(v.agent)}</div></div>
+      <div class="detail-row"><div class="detail-label">Target</div><div class="mono detail-value">${esc(v.target)}</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="detail-section">
+      <div class="detail-label">Denial Reason</div>
+      <div class="detail-value">${esc(v.reason)}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Applicable Policy</div>
+      <div class="detail-value" style="color:var(--primary)">${esc(v.policy)}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Request Envelope (Gateway Decision)</div>
+      <div class="code-block">${esc(v.envelope)}</div>
+    </div>
+  `);
+}
+
+function openAlertModal(id) {
+  const a = ALERTS[id];
+  if(!a) return;
+  openModal(`Alert · ${a.title}`, `
+    <div class="detail-grid">
+      <div class="detail-row"><div class="detail-label">Severity</div><div><span class="badge ${severityColor(a.severity)}">${esc(a.severity)}</span></div></div>
+      <div class="detail-row"><div class="detail-label">Time</div><div class="mono detail-value">${esc(a.time)}</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="detail-section">
+      <div class="detail-label">Detail</div>
+      <div class="detail-value">${esc(a.desc)}</div>
+    </div>
+    ${a.violationId !== null ? `
+    <div style="display:flex;gap:var(--space-2);margin-top:var(--space-2);">
+      <button class="topbar-btn primary" onclick="closeModal();openViolationModal(${a.violationId})">
+        <i data-lucide="external-link" width="13" height="13"></i>
+        View Violation
+      </button>
+      <button class="topbar-btn" onclick="dismissAlert(${a.id});closeModal();">Dismiss Alert</button>
+    </div>` : `
+    <button class="topbar-btn" onclick="dismissAlert(${a.id});closeModal();">Dismiss Alert</button>`}
+  `);
+}
+
+function openTrustEdgeModal(edge) {
+  openModal(`Trust Edge · ${edge.from} → ${edge.to}`, `
+    <div class="detail-grid">
+      <div class="detail-row"><div class="detail-label">Source</div><div class="mono detail-value" style="color:var(--primary)">${esc(edge.from)}</div></div>
+      <div class="detail-row"><div class="detail-label">Target</div><div class="mono detail-value" style="color:var(--primary)">${esc(edge.to)}</div></div>
+      <div class="detail-row"><div class="detail-label">Relationship</div><div class="detail-value">${esc(edge.type)}</div></div>
+      <div class="detail-row"><div class="detail-label">Confidence</div><div><span class="badge ${edge.color}">${esc(edge.weight)}</span></div></div>
+    </div>
+    ${edge.degraded ? `
+    <div class="divider"></div>
+    <div style="background:var(--warning-dim);border:1px solid var(--warning);border-radius:var(--radius-md);padding:var(--space-3);">
+      <div style="font-weight:600;color:var(--warning);font-size:var(--text-xs);margin-bottom:4px;">Trust edge degraded</div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);">3 or more escalation mismatches detected within 60-minute window. Confidence downgraded from TRUSTED to MONITORED per POLICY-012.</div>
+    </div>` : ''}
+  `);
+}
+
+/* ═══════════════════ DRAWER ═══════════════════ */
+function openAgentDrawer(agentId) {
+  const a = state.agents.find(x=>x.id===agentId);
+  if(!a) return;
+  document.getElementById('drawer-title').textContent = a.id;
+  document.getElementById('drawer-sub').textContent = a.role + ' · ' + a.roleDesc;
+
+  document.getElementById('drawer-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:var(--space-3);">
+      <div class="agent-avatar" style="width:48px;height:48px;font-size:var(--text-base);">${esc(a.avatar)}</div>
+      <div>
+        <div style="display:flex;gap:var(--space-2);align-items:center;">
+          <span class="badge ${statusColor(a.status)}">${esc(a.statusLabel)}</span>
+          <span class="badge gray">${esc(a.authority)}</span>
+        </div>
+        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">Last seen: <span class="mono">${esc(a.lastSeen)} EST</span></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="detail-section">
+      <div class="detail-label">Permitted Scopes</div>
+      <div class="tag-list">${a.scopes.map(s=>`<span class="scope-tag">${esc(s)}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Trust Relationships</div>
+      ${a.trust.map(t=>`<div style="font-size:var(--text-xs);padding:var(--space-1) 0;border-bottom:1px solid var(--border);">${esc(t)}</div>`).join('')}
+    </div>
+    <div class="divider"></div>
+    <div class="detail-section">
+      <div class="detail-label">Recent Actions</div>
+      <table class="data-table" style="margin-top:4px;">
+        <thead><tr><th>Time</th><th>Action</th><th>Outcome</th></tr></thead>
+        <tbody>
+          ${a.history.map(h=>`
+            <tr>
+              <td class="mono">${esc(h.time)}</td>
+              <td class="mono" style="font-size:10px;">${esc(h.action)}</td>
+              <td><span class="badge ${outcomeClass(h.outcome)}">${esc(h.outcome)}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${a.status==='blocked' ? `
+    <div style="background:var(--error-dim);border:1px solid var(--error);border-radius:var(--radius-md);padding:var(--space-3);">
+      <div style="font-weight:600;color:var(--error);font-size:var(--text-xs);">Agent blocked</div>
+      <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">This agent is currently blocked after a policy violation. Use Simulation → Restore to re-enable.</div>
+    </div>` : ''}
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+      <button class="topbar-btn" onclick="closeDrawer();switchView('logs')">View in audit log</button>
+      <button class="topbar-btn" onclick="closeDrawer();switchView('violations')">View violations</button>
+    </div>
+  `;
+
+  document.getElementById('drawer-overlay').classList.add('open');
+  lucide.createIcons();
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+/* ═══════════════════ EVENTS ═══════════════════ */
+// Nav items
+document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+  item.addEventListener('click', () => switchView(item.dataset.view));
+  item.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') switchView(item.dataset.view); });
+});
+
+// Violation filter buttons
+document.getElementById('violation-filter-bar')?.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#violation-filter-bar .filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.violationFilter = btn.dataset.filter;
+    renderViolations();
+  });
+});
+
+// Log filter buttons
+document.querySelectorAll('[data-log-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-log-filter]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.logFilter = btn.dataset.logFilter;
+    renderLogs();
+  });
+});
+
+// Log agent filter
+document.getElementById('log-agent-filter')?.addEventListener('change', e => {
+  state.logAgentFilter = e.target.value;
+  renderLogs();
+});
+
+// Violation cards in overview
+document.querySelectorAll('[data-violation]').forEach(card => {
+  card.addEventListener('click', () => openViolationModal(+card.dataset.violation));
+});
+
+// Alert banner
+document.getElementById('alert-banner')?.addEventListener('click', (e) => {
+  if(e.target.id !== 'banner-dismiss') openAlertModal(0);
+});
+document.getElementById('banner-dismiss')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('alert-banner').classList.add('hidden');
+});
+
+// Modal close
+document.getElementById('modal-close')?.addEventListener('click', closeModal);
+document.getElementById('modal-overlay')?.addEventListener('click', e => {
+  if(e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// Drawer close
+document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
+document.getElementById('drawer-overlay')?.addEventListener('click', e => {
+  if(e.target === document.getElementById('drawer-overlay')) closeDrawer();
+});
+
+// Alert badge
+document.getElementById('alert-badge')?.addEventListener('click', () => switchView('alerts'));
+
+// Theme toggle
+const themeToggle = document.getElementById('theme-toggle');
+let currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+themeToggle?.addEventListener('click', () => {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  themeToggle.innerHTML = currentTheme === 'dark'
+    ? '<i data-lucide="moon" width="16" height="16"></i>'
+    : '<i data-lucide="sun" width="16" height="16"></i>';
+  lucide.createIcons();
+});
+
+// Refresh
+document.getElementById('refresh-btn')?.addEventListener('click', () => {
+  const icon = document.querySelector('#refresh-btn i');
+  if(icon) { icon.style.animation='spin 0.6s linear'; setTimeout(()=>icon.style.animation='',700); }
+  renderView(state.currentView);
+});
+
+// Keyboard: Escape closes modal/drawer
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') {
+    closeModal();
+    closeDrawer();
+  }
+});
+
+/* ═══════════════════ INIT ═══════════════════ */
+lucide.createIcons();
+renderOverview();
+renderAgentsList();
+renderViolations();
+renderTrustGraph();
+renderLogs();
+renderTimeline();
+renderAlerts();
+renderSimulation();
+renderPolicy();
+
+// Extra spin keyframe
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
