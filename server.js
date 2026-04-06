@@ -6,13 +6,22 @@ const app = express();
 // Serve static files from public directory
 app.use(express.static('public'));
 
-// Routes for the two preview sites
-app.get('/enterprise-dashboard-preview', (req, res) => {
+// Primary routes for the two preview sites
+app.get('/enterprise-dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'enterprise-dashboard.html'));
 });
 
-app.get('/policy-configuration-preview', (req, res) => {
+app.get('/policy-configuration-decision-trace', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'policy-configuration.html'));
+});
+
+// Backward-compatible redirects from legacy preview routes
+app.get('/enterprise-dashboard-preview', (req, res) => {
+  res.redirect(301, '/enterprise-dashboard');
+});
+
+app.get('/policy-configuration-preview', (req, res) => {
+  res.redirect(301, '/policy-configuration-decision-trace');
 });
 
 // Root redirect
@@ -68,8 +77,8 @@ app.get('/', (req, res) => {
       <div class="container">
         <h1>SHOGI Systems - Preview Sites</h1>
         <div class="links">
-          <a href="/enterprise-dashboard-preview">Enterprise Dashboard Preview</a>
-          <a href="/policy-configuration-preview">Policy Configuration Preview</a>
+          <a href="/enterprise-dashboard">Enterprise Dashboard</a>
+          <a href="/policy-configuration-decision-trace">Policy Configuration Decision Trace</a>
         </div>
       </div>
     </body>
@@ -82,6 +91,6 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📍 Enterprise Dashboard: http://localhost:${PORT}/enterprise-dashboard-preview`);
-  console.log(`📍 Policy Configuration: http://localhost:${PORT}/policy-configuration-preview`);
+  console.log(`📍 Enterprise Dashboard: http://localhost:${PORT}/enterprise-dashboard`);
+  console.log(`📍 Policy Configuration Decision Trace: http://localhost:${PORT}/policy-configuration-decision-trace`);
 });
