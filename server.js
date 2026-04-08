@@ -31,6 +31,7 @@ app.get('/', (req, res) => {
     <html>
     <head>
       <title>SHOGI Systems - Preview Sites</title>
+      <script defer src="/_vercel/insights/script.js"></script>
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
