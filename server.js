@@ -1,14 +1,34 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs/promises');
+const https = require('https');
 
 const app = express();
 
 // Serve static files from public directory
 app.use(express.static('public'));
 
+// Proxy endpoint to bypass ad blockers - fetches Vercel insights script from unrecognizable URL
+app.get('/lib/telemetry.js', (req, res) => {
+  const options = {
+    hostname: 'vercel.com',
+    port: 443,
+    path: '/_vercel/insights/script.js',
+    method: 'GET',
+    headers: { 'User-Agent': 'Node.js' }
+  };
+
+  https.get(options, (proxyRes) => {
+    res.type('application/javascript');
+    proxyRes.pipe(res);
+  }).on('error', (error) => {
+    console.error('Failed to fetch insights script:', error);
+    res.status(500).send('');
+  });
+});
+
 // Primary routes for the two preview sites
-const INSIGHTS_SCRIPT_TAG = '<script defer src="/_vercel/insights/script.js"></script>';
+const INSIGHTS_SCRIPT_TAG = '<script defer src="/lib/telemetry.js"></script>';
 
 async function sendHtmlWithInsights(res, filePath) {
   try {
