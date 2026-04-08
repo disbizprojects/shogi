@@ -621,6 +621,9 @@
       .trace-kv { grid-template-columns: 110px 1fr; }
     }
   </style>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -1151,7 +1154,7 @@
       }
       function selectPolicy(name){ state.selectedPolicy = name; renderEditorPreview(); el('breadcrumbPolicy').textContent = name; }
 
-      // ── element refs ───────────────────────────────────────
+      // ── element refs ���──────────────────────────────────────
       var policyTableBody        = el('policyTableBody');
       var policyCountPill        = el('policyCountPill');
       var topPolicyCount         = el('topPolicyCount');

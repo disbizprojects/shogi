@@ -31,6 +31,9 @@ app.get('/', (req, res) => {
     <html>
     <head>
       <title>SHOGI Systems - Preview Sites</title>
+      <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      </script>
       <script defer src="/_vercel/insights/script.js"></script>
       <style>
         body {
