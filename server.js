@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs/promises');
 
 const app = express();
 
@@ -7,12 +8,28 @@ const app = express();
 app.use(express.static('public'));
 
 // Primary routes for the two preview sites
-app.get('/enterprise-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'enterprise-dashboard.html'));
+const INSIGHTS_SCRIPT_TAG = '<script defer src="/_vercel/insights/script.js"></script>';
+
+async function sendHtmlWithInsights(res, filePath) {
+  try {
+    const html = await fs.readFile(filePath, 'utf8');
+    const withInsights = html.includes('/_vercel/insights/script.js')
+      ? html
+      : html.replace('</head>', `  ${INSIGHTS_SCRIPT_TAG}\n</head>`);
+
+    res.type('html').send(withInsights);
+  } catch (error) {
+    console.error(`Failed to serve ${filePath}:`, error);
+    res.status(500).send('Internal Server Error');
+  }
+}
+
+app.get('/enterprise-dashboard', async (req, res) => {
+  await sendHtmlWithInsights(res, path.join(__dirname, 'public', 'enterprise-dashboard.html'));
 });
 
-app.get('/policy-configuration-decision-trace', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'policy-configuration.html'));
+app.get('/policy-configuration-decision-trace', async (req, res) => {
+  await sendHtmlWithInsights(res, path.join(__dirname, 'public', 'policy-configuration.html'));
 });
 
 // Backward-compatible redirects from legacy preview routes
