@@ -610,6 +610,9 @@
       .drawer { width: 100%; }
     }
   </style>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
@@ -935,7 +938,7 @@
     </div>
   </section>
 
-  <!-- ═══════════════════════════════ TIMELINE VIEW ═══════════════════════════════ -->
+  <!-- ═══════════════════════════════ TIMELINE VIEW ══════════════════════════��════ -->
   <section class="view" id="view-timeline">
     <div class="two-col">
       <div class="panel">
@@ -1434,7 +1437,7 @@ function renderTimelineRelated(ev) {
   `).join('') : `<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-faint);font-size:var(--text-xs)">No related log entries</td></tr>`;
 }
 
-/* ═══════════════════ ALERTS ═══════════════════ */
+/* ═══════════════════ ALERTS ═══════════��═══════ */
 function renderAlerts() {
   const el = document.getElementById('alerts-list');
   if(!el) return;
